@@ -91,9 +91,26 @@
     </div>
   </div>
 
+  <div class="split">
+    <div id="chat-panel" style="max-width:640px;width:100%">
+      <details open>
+        <summary><strong>Chat with OntoGSN (OpenRouter)</strong></summary>
+        <div id="chat-log" style="border:1px solid #ddd;border-radius:.5rem;padding:.5rem;height:220px;overflow:auto;margin:.5rem 0;"></div>
+        <form id="chat-form" style="display:grid;gap:.5rem">
+          <input id="chat-key" type="password" placeholder="OpenRouter API key (stored locally)" autocomplete="off">
+          <input id="chat-model" type="text" value="openai/gpt-4o-mini" title="Any OpenRouter model id">
+          <textarea id="chat-input" rows="2" placeholder="Ask about goals, contexts, solutions…"></textarea>
+          <button id="chat-send" type="submit">Send</button>
+        </form>
+        <small>Tip: your key is kept in <code>localStorage</code> on this device only.</small>
+      </details>
+    </div>
+  </div>
+
   <!-- Important: serve this file with a local web server (e.g., `python -m http.server`) -->
   <script type="module" src="/assets/js/queries.js"></script>
   <script type="module" src="/assets/js/layers.js"></script>
-
+  <script type="module" src="/assets/js/chat.js"></script>
+  
 </body>
 </html>

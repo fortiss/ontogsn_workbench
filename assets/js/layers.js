@@ -22,10 +22,20 @@ function shorten(iriOrLabel) {
     return String(iriOrLabel).replace(/^.*[#/]/, "");
   }
 }
-function esc(s) { return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+function esc(s) { 
+  return String(s).replace(/[&<>"']/g, c => ({
+    '&':'&amp;',
+    '<':'&lt;',
+    '>':'&gt;',
+    '"':'&quot;',
+    "'":'&#39;'}[c])); 
+}
+
 function labelWidth(t, minW = 44, maxW = 180, pad = 12) {
   return Math.min(maxW, Math.max(minW, 7.2 * String(t).length + pad));
 }
+
 function termToDisplay(t) {
   if (!t) return "";
   switch (t.termType) {
@@ -40,6 +50,7 @@ function termToDisplay(t) {
     default: return t.value ?? String(t);
   }
 }
+
 function bindingsToRows(iter) {
   const rows = [];
   for (const b of iter) {

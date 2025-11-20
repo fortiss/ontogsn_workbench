@@ -513,7 +513,7 @@ const app = new QueryApp();
 //app.init();
 window.addEventListener("DOMContentLoaded", async () => {
   await app.init();                     // loads TTLs + wires UI
-  await app.run(PATHS.q.visualize); // or PATHS.q.visualize
+  await app.run(PATHS.q.visualize);
 });
 
 // Also export the app for debugging in console if needed

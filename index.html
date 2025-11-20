@@ -41,6 +41,7 @@
     <div id="rightButtons" class="btns">
       <button data-query="/assets/data/visualize_graph.sparql" data-no-table="1">Tree View</button>
       <button id="btn-layered-view" data-no-table="1">Layer View</button>
+      <button id="btn-model-view" data-no-table="1">Model View</button>
       <label><input id="toggle-context" type="checkbox" checked data-no-table="1"> Contextual</label>
       <label><input id="toggle-defeat" type="checkbox" checked data-no-table="1"> Dialectic</label>
       <label><input type="checkbox"
@@ -92,8 +93,12 @@
   </div>
 
   <!-- Important: serve this file with a local web server (e.g., `python -m http.server`) -->
-  <script type="module" src="/assets/js/queries.js"></script>
-  <script type="module" src="/assets/js/layers.js"></script>
+  <script type = "module" src = "/assets/js/queries.js" ></script>
+  <script type = "module" src = "/assets/js/layers.js"  ></script>
+
+  <script src  = "https://unpkg.com/n3@1.17.0/browser/n3.min.js"></script>
+  <script type = "importmap">{"imports": {"three": "https://unpkg.com/three@0.160.0/build/three.module.js"}}</script>
+  <script type = "module" src = "/assets/js/model.js"   ></script>
 
 </body>
 </html>

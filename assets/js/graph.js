@@ -57,18 +57,16 @@ export function visualizeSPO(rows, {
   // --- Reset mount content (idempotent)
   rootEl.innerHTML = `
     <div class="gsn-legend">
-      <span><span class="gsn-badge"></span> supported by</span>
-      <span><span class="gsn-badge ctx"></span> in context of</span>
-      <span><span class="gsn-badge def"></span> challenges</span>
-      <span><span class="gsn-badge clt"></span> refers to</span>
-      <span><span class="gsn-badge vld"></span> valid</span>
-      <span><span class="gsn-badge ivld"></span> invalid</span>
-      <span><span class="gsn-badge undev"></span> undeveloped</span>
-      <span><span class="gsn-badge rule"></span> rule effects</span>
+      <span> <span class="gsn-badge">       </span> supported by  </span>
+      <span> <span class="gsn-badge ctx">   </span> in context of </span>
+      <span> <span class="gsn-badge def">   </span> challenges    </span>
+      <span> <span class="gsn-badge clt">   </span> refers to     </span>
+      <span> <span class="gsn-badge vld">   </span> valid         </span>
+      <span> <span class="gsn-badge ivld">  </span> invalid       </span>
+      <span> <span class="gsn-badge undev"> </span> undeveloped   </span>
+      <span> <span class="gsn-badge rule">  </span> rule effects  </span>
       
       <span class="gsn-controls">
-        <button class="gsn-btn" data-act="fit">Fit</button>
-        <!-- <button class="gsn-btn" data-act="reset">Reset</button> -->
       </span>
     </div>
     <svg class="gsn-svg"><g class="gsn-viewport"></g></svg>
@@ -78,9 +76,9 @@ export function visualizeSPO(rows, {
   if (width != null) svgNode.setAttribute("width", String(width));
   svgNode.setAttribute("height", String(height));
 
-  const svg   = d3.select(svgNode);
-  const g     = svg.select(".gsn-viewport");
-  const defs  = svg.append("defs");
+  const svg              = d3.select(svgNode);
+  const g                = svg.select(".gsn-viewport");
+  const defs             = svg.append("defs");
   const gOverCollections = g.append("g").attr("class", "gsn-overlay-collections");
 
   function marker(id, klass){
@@ -98,18 +96,21 @@ export function visualizeSPO(rows, {
   const idArrowCtx = `arrow-ctx-${uid}`;
   const idArrowDef = `arrow-def-${uid}`;
 
-  marker(idArrow, "norm");
-  marker(idArrowCtx, "ctx");
-  marker(idArrowDef, "def");
+  marker(idArrow    , "norm");
+  marker(idArrowCtx , "ctx");
+  marker(idArrowDef , "def");
 
-  function labelWidth(t, minW = 44, maxW = 180, pad = 12) {
+  function labelWidth(t, 
+                      minW = 44, 
+                      maxW = 180, 
+                      pad  = 12) {
     return Math.min(maxW, Math.max(minW, 7.2 * String(t).length + pad));
   }
 
   // --- Normalize predicates into Sets
-  const norm = x => String(x).trim();
-  const supSet = new Set(supportedBy.map(norm));
-  const ctxSet = new Set(contextOf.map(norm));
+  const norm    = x => String(x).trim();
+  const supSet  = new Set(supportedBy.map(norm));
+  const ctxSet  = new Set(contextOf.map(norm));
   const chalSet = new Set(challenges.map(norm));
 
   // --- Build adjacency from rows
@@ -147,13 +148,12 @@ export function visualizeSPO(rows, {
   // For every node with parents, choose the first one encountered as primary.
   const primaryParent = new Map();   // child -> chosen parent
   for (const [child, ps] of parents.entries()) {
-    // keep ordering stable: Array spread keeps insertion order
     const p = [...ps][0];
     if (p) primaryParent.set(child, p);
   }
 
   // Build adjacency for the layout tree using the primary parent only.
-  const layoutChildren = new Map();  // parent -> Set(children) for spanning tree
+  const layoutChildren = new Map();
   const addLC = (k, v) => { if (!layoutChildren.has(k)) layoutChildren.set(k, new Set()); layoutChildren.get(k).add(v); };
 
   // traverse starting from each root to collect the spanning tree
@@ -180,12 +180,13 @@ export function visualizeSPO(rows, {
       contexts: context.get(id) ? [...context.get(id)].map(cid => ({ id: cid, label: label(cid), _contextOf: id })) : []
     };
   }
-  const forest = roots.map(toHierarchy);
+  const forest    = roots.map(toHierarchy);
   const superRoot = (forest.length === 1) ? forest[0] : { id: "__ROOT__", label: "", children: forest };
 
   // --- Layout with d3.tree()
-  const root = d3.hierarchy(superRoot, d => d.children);
-  const dx = 200, dy = 80;
+  const root  = d3.hierarchy(superRoot, d => d.children);
+  const dx    = 200;
+  const dy    = 80;
   d3.tree().nodeSize([dx, dy])(root);
 
   // Position map: id -> {x,y}
@@ -251,11 +252,11 @@ export function visualizeSPO(rows, {
       });
     });
   }
-  console.debug("nodes", nodes.length, nodes.slice(0, 3));
-  console.debug("treeLinks", treeLinks.length, treeLinks.slice(0, 3));
-  console.debug("extraLinks", extraLinks.length, extraLinks.slice(0, 3));
-  console.debug("ctxLinks", ctxLinks.length, ctxLinks.slice(0, 3));
-  console.debug("defLinks", defLinks.length, defLinks.slice(0, 3));
+  console.debug("nodes"     , nodes.length      , nodes.slice(0, 3));
+  console.debug("treeLinks" , treeLinks.length  , treeLinks.slice(0, 3));
+  console.debug("extraLinks", extraLinks.length , extraLinks.slice(0, 3));
+  console.debug("ctxLinks"  , ctxLinks.length   , ctxLinks.slice(0, 3));
+  console.debug("defLinks"  , defLinks.length   , defLinks.slice(0, 3));
 
   // --- Collections
   const extNodeById = new Map();
@@ -263,16 +264,16 @@ export function visualizeSPO(rows, {
 
   function getHostPos(id) {
     const key = String(id).trim();
-    const p = pos.get(key) || ctxPos.get(key);
+    const p   = pos.get(key) || ctxPos.get(key);
     return p ? { x: p.x, y: p.y } : null;
   }
 
   function makeExternalNode(id, x, y, kind) {
     // draw a small rounded-rect + text (very lightweight)
     const g = gOverCollections.append("g")
-      .attr("class", `gsn-node collection ext ${kind}`)
-      .attr("data-id", id)
-      .attr("transform", `translate(${x},${y})`);
+      .attr("class"     , `gsn-node collection ext ${kind}`)
+      .attr("data-id"   , id)
+      .attr("transform" , `translate(${x},${y})`);
 
     g.append("rect")
       .attr("x", -28).attr("y", -12)
@@ -306,8 +307,10 @@ export function visualizeSPO(rows, {
       .attr("class", "gsn-link")
       .attr("d", d => linkV({ 
         //source: d.source, target: d.target 
-        source: { x: d.source.x, y: d.source.y + NODE_H/2 },
-        target: { x: d.target.x, y: d.target.y - NODE_H/2 }
+        source: { x: d.source.x, 
+                  y: d.source.y + NODE_H/2 },
+        target: { x: d.target.x, 
+                  y: d.target.y - NODE_H/2 }
       }))
       .attr("marker-end", `url(#${idArrow})`)
     .append("title").text("supported by");
@@ -318,8 +321,10 @@ export function visualizeSPO(rows, {
       .attr("class", "gsn-link extra")
       .attr("d", d => linkV({ 
         //source: d.source, target: d.target 
-        source: { x: d.source.x, y: d.source.y + NODE_H/2 },
-        target: { x: d.target.x, y: d.target.y - NODE_H/2 }
+        source: { x: d.source.x, 
+                  y: d.source.y + NODE_H/2 },
+        target: { x: d.target.x, 
+                  y: d.target.y - NODE_H/2 }
       }))
       .attr("marker-end", `url(#${idArrow})`)
     .append("title").text("supported by");
@@ -330,8 +335,10 @@ export function visualizeSPO(rows, {
       .attr("class", "gsn-link ctx")
       //.attr("d", d => linkLine(d))
       .attr("d", d => linkH({
-        source: { x: d.source.x + ((d.source?.w ?? 0) / 2), y: d.source.y },
-        target: { x: d.target.x - ((d.target?.w ?? 0) / 2), y: d.target.y }
+        source: { x: d.source.x + ((d.source?.w ?? 0) / 2), 
+                  y: d.source.y },
+        target: { x: d.target.x - ((d.target?.w ?? 0) / 2), 
+                  y: d.target.y }
       }))
       .attr("marker-end", `url(#${idArrowCtx})`)
     .append("title").text("in context of");
@@ -342,8 +349,10 @@ export function visualizeSPO(rows, {
       .attr("class", "gsn-link def")
       //.attr("d", d => linkLine(d))
       .attr("d", d => linkH({
-        source: { x: d.source.x + ((d.source?.w ?? 0) / 2), y: d.source.y },
-        target: { x: d.target.x - ((d.target?.w ?? 0) / 2), y: d.target.y }
+        source: { x: d.source.x + ((d.source?.w ?? 0) / 2), 
+                  y: d.source.y },
+        target: { x: d.target.x - ((d.target?.w ?? 0) / 2), 
+                  y: d.target.y }
       }))
       .attr("marker-end", `url(#${idArrowDef})`)
     .append("title").text("challenges");
@@ -362,7 +371,8 @@ export function visualizeSPO(rows, {
   
   defG.on("click", (ev, d) => {
     window.dispatchEvent(new CustomEvent("gsn:defeaterClick", {
-      detail: { id: d.id, label: d.label }   // prefer IRI id
+      detail: { id: d.id, 
+                label: d.label }   // prefer IRI id
     }));
   });
 
@@ -380,24 +390,22 @@ export function visualizeSPO(rows, {
     .text(d => d.label)
     .append("title").text(d => `${d.id} (challenges ${d.challenges})`);
 
-  function clearAll(){ 
-    nodeG.attr("class","gsn-node"); 
-    ctxG.attr("class", "gsn-node ctx");
-    defG.attr("class", "gsn-node def");
-  }
-  function highlightByIds(ids, klass){
-    const S = new Set(ids.map(String));
-    nodeG.classed(klass, d => S.has(d.id));
-    ctxG.classed(klass, d => S.has(String(d.id)));
-    defG.classed(klass, d => S.has(String(d.id)));
-  }
+  function clearAll(){ nodeG.attr("class", "gsn-node"); 
+                       ctxG.attr( "class", "gsn-node ctx");
+                       defG.attr( "class", "gsn-node def");}
+  
+  function highlightByIds(ids, klass){ const S = new Set(ids.map(String));
+                                       nodeG.classed(klass, d => S.has(d.id));
+                                       ctxG.classed( klass, d => S.has(String(d.id)));
+                                       defG.classed( klass, d => S.has(String(d.id)));}
+
   window.graphCtl = { clearAll, highlightByIds, fit, reset };
 
   nodeG.append("rect")
-    .attr("width", d => labelWidth(d.label))
+    .attr("width" , d => labelWidth(d.label))
     .attr("height", 26)
-    .attr("x", d => -labelWidth(d.label)/2)
-    .attr("y", -13);
+    .attr("x"     , d => -labelWidth(d.label)/2)
+    .attr("y"     , -13);
 
   nodeG.append("text")
     .attr("text-anchor", "middle")
@@ -517,14 +525,13 @@ export function visualizeSPO(rows, {
       const baseR    = armLen; // radius for first ring
 
       itemList.forEach((itemId, i) => {
-        const ring = Math.floor(i / perRing);
-        const pos  = i % perRing;
-        const startAngle = opts.startAngle ?? Math.PI / 2;
-        const angle = startAngle + (2 * Math.PI / perRing) * pos; // start upwards
-
-        const radius = baseR + ring * ringGap;
-        const ix = hubX + Math.cos(angle) * radius;
-        const iy = hubY + Math.sin(angle) * radius;
+        const ring        = Math.floor(i / perRing);
+        const pos         = i % perRing;
+        const startAngle  = opts.startAngle ?? Math.PI / 2;
+        const angle       = startAngle + (2 * Math.PI / perRing) * pos; // start upwards
+        const radius      = baseR + ring * ringGap;
+        const ix          = hubX + Math.cos(angle) * radius;
+        const iy          = hubY + Math.sin(angle) * radius;
 
         // spoke
         gOverCollections.append("path")
@@ -557,8 +564,8 @@ export function visualizeSPO(rows, {
     collectionsDrawn = true;
   }
 
-  rootEl.querySelector('[data-act="fit"]')?.addEventListener("click", fit);
-  rootEl.querySelector('[data-act="reset"]')?.addEventListener("click", reset);
+  rootEl.querySelector('[data-act = "fit"]')?.addEventListener("click", fit);
+  rootEl.querySelector('[data-act = "reset"]')?.addEventListener("click", reset);
   fit();
 
   return { fit, reset, destroy, svg: svgNode, clearAll, highlightByIds, addCollections, clearCollections };

@@ -363,7 +363,7 @@ export async function renderLayeredView(opts = {}) {
   if (!app.store) await app.init(); // no-op if already done
 
   // Reuse the same SPARQL that “Visualize Graph” uses in index.html
-  const qURL = "/assets/data/visualize_graph.sparql";
+  const qURL = "/assets/data/queries/visualize_graph.sparql";
   const r = await fetch(`${qURL}?v=${performance.timeOrigin}`, { cache: "no-store" });
   if (!r.ok) throw new Error(`Fetch failed ${r.status} for ${qURL}`);
   const query = (await r.text()).replace(/^\uFEFF/, "");

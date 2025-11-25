@@ -20,17 +20,17 @@ const BASE_CAR  = "https://example.org/car-demo#";
 
 // Centralize paths in one place for readability
 const PATHS = {
-  onto    : "/assets/data/ontogsn_lite.ttl",
-  example : "/assets/data/example_ac.ttl",
-  car     : "/assets/data/car.ttl",
+  onto    : "/assets/data/ontologies/ontogsn_lite.ttl",
+  example : "/assets/data/ontologies/example_ac.ttl",
+  car     : "/assets/data/ontologies/car.ttl",
   q       : {
-    nodes     : "/assets/data/read_all_nodes.sparql",
-    rels      : "/assets/data/read_all_relations.sparql",
-    visualize : "/assets/data/visualize_graph.sparql",
-    propCtx   : "/assets/data/propagate_context.sparql",
-    propDef   : "/assets/data/propagate_defeater.sparql",
-    listModules     : "/assets/data/list_modules.sparql",
-    visualizeByMod  : "/assets/data/visualize_graph_by_module.sparql"
+    nodes     : "/assets/data/queries/read_all_nodes.sparql",
+    rels      : "/assets/data/queries/read_all_relations.sparql",
+    visualize : "/assets/data/queries/visualize_graph.sparql",
+    propCtx   : "/assets/data/queries/propagate_context.sparql",
+    propDef   : "/assets/data/queries/propagate_defeater.sparql",
+    listModules     : "/assets/data/queries/list_modules.sparql",
+    visualizeByMod  : "/assets/data/queries/visualize_graph_by_module.sparql"
   }
 };
 

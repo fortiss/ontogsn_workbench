@@ -39,6 +39,7 @@
       <button data-query="/assets/data/queries/read_all_relations.sparql">See Relations</button>
       <button id="tab-table"  class="tab active">Table</button>
       <button id="tab-editor" class="tab" >Editor</button> 
+      <button id="tab-doc"    class="tab" data-doc-query="/assets/data/queries/read_document.sparql" data-doc-var="doc">Document</button>
     </div>
     <div id="rightButtons" class="btns">
       <button data-query="/assets/data/queries/visualize_graph.sparql" data-no-table="1">Tree View</button>
@@ -66,6 +67,7 @@
     <div id="leftPane" class="pane pane-left">
       <div id="results"></div>
       <div id="editor-root" style="display:none;"></div>
+      <div id="doc-root" style="display:none;"></div>
     </div>
     <div id="rightPane" class="pane pane-right gsn-host"></div>
   </div>
@@ -114,7 +116,8 @@
   <script src  = "https://unpkg.com/n3@1.17.0/browser/n3.min.js"></script>
   <script type = "importmap">{"imports": {"three": "https://unpkg.com/three@0.160.0/build/three.module.js"}}</script>
   <script type = "module" src = "/assets/js/model.js"   ></script>
-  <script type = "module" src = "/assets/js/editor.js"></script>
+  <script type = "module" src = "/assets/js/editor.js"  ></script>
+  <script type = "module" src = "/assets/js/document.js"></script>
 
 </body>
 </html>

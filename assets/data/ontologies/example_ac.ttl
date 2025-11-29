@@ -24,6 +24,12 @@ case:AC_ACT_FASTRobustLLM
     schema:dateModified "2025-11-04"^^xsd:date ;
     gsn:contains case:ARG_Robustness , case:Sn1 , case:Sn2 , case:Sn1_2_1 .
 
+case:AC_ACT_FASTRobustLLM ex:summarizedIn case:ACT_FAST_Document .
+
+case:ACT_FAST_Document a ex:Document ;
+                       #schema:contentUrl "https://fortiss.github.io/OntoGSN/assets/data/actFast.md" .
+                       schema:contentUrl "http://localhost:8000/assets/data/actFast.md" .
+
 case:ARG_Robustness
     a gsn:Argument ;
     schema:identifier "ARG-R" ;

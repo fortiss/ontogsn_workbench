@@ -48,25 +48,44 @@ function applyTemplate(template, values) {
 // ---- UI wiring ----
 
 function initTabs() {
-  const tabTable  = document.getElementById("tab-table");
-  const tabEditor = document.getElementById("tab-editor");
-  const resultsEl = document.getElementById("results");
+  const tabTable   = document.getElementById("tab-table");
+  const tabEditor  = document.getElementById("tab-editor");
+  const tabDoc     = document.getElementById("tab-doc");
+  const resultsEl  = document.getElementById("results");
   const editorRoot = document.getElementById("editor-root");
+  const docRoot    = document.getElementById("doc-root");
 
   if (!tabTable || !tabEditor || !resultsEl || !editorRoot) return;
 
   const showTable = () => {
     tabTable.classList.add("active");
     tabEditor.classList.remove("active");
-    resultsEl.style.display = "";
-    editorRoot.style.display = "none";
+    tabDoc?.classList.remove("active");
+
+    resultsEl.style.display   = "";
+    editorRoot.style.display  = "none";
+    if (docRoot) docRoot.style.display = "none";
   };
 
   const showEditor = () => {
     tabEditor.classList.add("active");
     tabTable.classList.remove("active");
-    resultsEl.style.display = "none";
-    editorRoot.style.display = "";
+    tabDoc?.classList.remove("active");
+
+    resultsEl.style.display   = "none";
+    editorRoot.style.display  = "";
+    if (docRoot) docRoot.style.display = "none";
+  };
+
+  const showDoc = () => {
+    if (!tabDoc || !docRoot) return;
+    tabDoc.classList.add("active");
+    tabTable.classList.remove("active");
+    tabEditor.classList.remove("active");
+
+    resultsEl.style.display   = "none";
+    editorRoot.style.display  = "none";
+    docRoot.style.display     = "";
   };
 
   tabTable.addEventListener("click", (e) => {
@@ -77,6 +96,11 @@ function initTabs() {
   tabEditor.addEventListener("click", (e) => {
     e.preventDefault();
     showEditor();
+  });
+
+  tabDoc?.addEventListener("click", (e) => {
+    e.preventDefault();
+    showDoc();
   });
 
   // Optional: whenever a [data-query] button is clicked (e.g. "See Node Info"),

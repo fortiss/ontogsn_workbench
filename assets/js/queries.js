@@ -637,5 +637,25 @@ window.addEventListener("DOMContentLoaded", async () => {
   await app.run(PATHS.q.visualize);
 });
 
+app.selectBindings = async function selectBindings(queryText) {
+  // Ensure store is ready (reuses your init() logic and _initPromise)
+  await this.init();
+
+  const q = queryText.trim();
+  const res = this.store.query(q);
+
+  const rows = [];
+  for (const binding of res) {
+    const row = {};
+    for (const [name, term] of binding) {
+      row[name] = { value: term.value, term };
+    }
+    rows.push(row);
+  }
+  return rows;
+};
+
+
+
 // Also export the app for debugging in console if needed
 export default app;

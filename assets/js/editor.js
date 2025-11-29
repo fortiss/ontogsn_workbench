@@ -22,14 +22,14 @@ async function fetchText(relPath) {
 
 const ACTIONS = [
   {
-    id: "create-goal",
-    label: "Create Goal node",
-    templatePath: "/assets/data/create_goal.sparql",
+    id: "create-gsn-element",
+    label: "Create GSN node",
+    templatePath: "/assets/data/queries/create_gsn_element.sparql",
     fields: [
       { name: "ID",      label: "Identifier (e.g. G1.1)", placeholder: "G1.1" },
       { name: "IRI",     label: "Local name (e.g. car_G1_1)", placeholder: "car_G1_1" },
       { name: "LABEL",   label: "Label", placeholder: "Goal label..." },
-      { name: "COMMENT", label: "Comment (optional)", placeholder: "Optional description..." }
+      { name: "STATEMENT", label: "Statement", placeholder: "Description..." }
     ]
   },
   // Add more actions as needed...
@@ -93,12 +93,19 @@ async function initEditorUI() {
   const root = document.getElementById("editor-root");
   if (!root) return;
 
+  await app.init();
+
   // Basic structure
   root.innerHTML = `
     <div class="editor">
       <label>
         Action:
         <select id="editor-action"></select>
+      </label>
+
+      <label style="display:block; margin-top:0.5rem;">
+        GSN element type:
+        <select id="editor-type"></select>
       </label>
 
       <div id="editor-fields" style="margin-top:0.5rem;"></div>
@@ -114,12 +121,13 @@ async function initEditorUI() {
     </div>
   `;
 
-  const actionSelect = root.querySelector("#editor-action");
+  const actionSelect    = root.querySelector("#editor-action");
+  const typeSelect      = root.querySelector("#editor-type");
   const fieldsContainer = root.querySelector("#editor-fields");
-  const runBtn = root.querySelector("#editor-run");
-  const previewEl = root.querySelector("#editor-preview");
+  const runBtn          = root.querySelector("#editor-run");
+  const previewEl       = root.querySelector("#editor-preview");
 
-  // Populate dropdown
+  // Populate action dropdown
   for (const action of ACTIONS) {
     const opt = document.createElement("option");
     opt.value = action.id;
@@ -154,8 +162,40 @@ async function initEditorUI() {
     previewEl.textContent = "";
   });
 
-  // Initial render
+  function shortenGsnType(iri) {
+    const base = "https://w3id.org/OntoGSN/ontology#";
+    if (iri.startsWith(base)) {
+      return "gsn:" + iri.slice(base.length); // e.g. gsn:Goal
+    }
+    return iri;
+  }
+
+  async function loadGsnTypes() {
+    const q = await fetchText("/assets/data/queries/read_allowed_gsnElements.sparql");
+
+    const rows = await app.selectBindings(q);
+
+    typeSelect.innerHTML = "";
+
+    for (const row of rows || []) {
+      const iri = row.type.value;
+      const short = shortenGsnType(iri);
+
+      const opt = document.createElement("option");
+      opt.value = short;
+      opt.textContent = short;
+      typeSelect.appendChild(opt);
+    }
+
+    if (!typeSelect.children.length) {
+      console.warn("No subclasses of gsn:GSNElement found by read_allowed_gsnElements.sparql");
+    }
+  }
+
+
+  // Initial render + load type list
   renderFields(getCurrentAction());
+  await loadGsnTypes();
 
   // Cache templates so we don't re-fetch every time
   const templateCache = new Map();
@@ -176,15 +216,21 @@ async function initEditorUI() {
       values[f.name] = (input?.value ?? "").trim();
     }
 
+    const selectedType = typeSelect.value;
+    if (!selectedType) {
+      alert("Please choose a GSN element type.");
+      return;
+    }
+    values.TYPE = selectedType;
+
     const tmpl = await getTemplate(action);
     const finalQuery = applyTemplate(tmpl, values);
 
     previewEl.textContent = finalQuery;
 
-    // Run via the existing QueryApp, which will treat this as UPDATE
-    // if the first non-PREFIX keyword is INSERT/DELETE/... (already implemented).
     await app.runInline(finalQuery, null, { noTable: true });
   });
+
 }
 
 // Boot

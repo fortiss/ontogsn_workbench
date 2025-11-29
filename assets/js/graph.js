@@ -107,6 +107,15 @@ export function visualizeSPO(rows, {
         valid
       </span>
 
+      <span class="gsn-legend-item" title="Artefacts (evidential or contextual)">
+        <svg class="gsn-legend-node" viewBox="0 0 80 36">
+          <g class="gsn-node collection item">
+            <rect x="4" y="4" width="72" height="28"></rect>
+          </g>
+        </svg>
+        artefacts
+      </span>
+
       <span class="gsn-legend-item" title="Node marked as invalid">
         <svg class="gsn-legend-node" viewBox="0 0 80 36">
           <g class="gsn-node invalid">

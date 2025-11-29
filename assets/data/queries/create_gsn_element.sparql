@@ -4,8 +4,8 @@ PREFIX schema:<https://schema.org/>
 PREFIX ex:    <https://example.org/car-demo#>
 
 INSERT DATA {
-  ex:{{IRI}} a gsn:Goal ;
+  ex:{{IRI}} a {{TYPE}} ;
     schema:identifier "{{ID}}" ;
     schema:name       "{{LABEL}}" ;
-    schema:description "{{COMMENT}}" .
+    gsn:statement     "{{STATEMENT}}" .
 }

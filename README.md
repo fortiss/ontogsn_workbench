@@ -1,11 +1,11 @@
-# OntoGSN Web-Based Interface
-
+# OntoGSN Workbench 
+*Ontology-based framework for semantic management and extension of assurance cases*
 
 ![Screenshot showing two interface views: a Markdown document view on the left detailing an assurance case, and a 3D interactive car model view on the right highlighting vehicle parts and displaying roof load status.](assets/images/interface_docVSmodel.PNG "Interface, document view (left pane) and model view (right pane).")
 
 ![Screenshot showing two interface views: a scrollable table displaying GSN node details (ID, type, statement) on the left, and a graph visualization of an OntoGSN assurance case with interconnected nodes and edges on the right.](assets/images/interface_tableVSgraph.PNG "Interface, table view (left pane) and graph view (right pane).")
 
-This codebase implements a web-based interface for visualizing and interacting with Goal Structuring Notation (GSN v3) assurance cases that are modeled and extended using OWL/RDF web ontologies. The interface has two facets:
+This is the client-side OntoGSN workbench for visualizing, interacting and building on Goal Structuring Notation (GSN v3) assurance cases. The interface has two facets:
 1. a **prototypical app** for users to explore complex arguments, view underlying data in different ways, and dynamically integrate domain ontologies;
 2. an **open sandbox** for developers to test and extend what is possible with assurance cases and related artifacts (e.g., models, documents, code, etc.).
 

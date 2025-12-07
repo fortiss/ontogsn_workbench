@@ -311,7 +311,7 @@ class QueryApp {
     }
   }
 
-  async _buildModulesBar() {
+  async _buildModulesBar(isDefault=false) {
     // 1) Query modules
     const listQ = await fetchText(PATHS.q.listModules);
     const rows  = bindingsToRows(this.store.query(listQ));
@@ -328,6 +328,8 @@ class QueryApp {
 
     // 3) An “All” button to restore the global view
     const btnAll = document.createElement("button");
+    btnAll.classList.add('tab');
+    if (isDefault) btn.classList.add('active');
     btnAll.textContent = "All";
     btnAll.addEventListener("click", () => this.run(PATHS.q.visualize));
     bar.appendChild(btnAll);

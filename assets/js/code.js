@@ -30,11 +30,9 @@ async function fetchCodeMeta(solutionIri) {
   if (!r.ok) {
     throw new Error(`Fetch failed ${r.status} for ${CODE_SOLUTION_QUERY}`);
   }
-  const raw = (await r.text()).replace(/^\uFEFF/, "");
-  // 🔧 substitute the placeholder
-  const query = raw.replace("${solutionIri}", solutionIri);
-
-  const bindings = await runSparql(query);
+  const raw       = (await r.text()).replace(/^\uFEFF/, "");
+  const query     = raw.replace("${solutionIri}", solutionIri);
+  const bindings  = await runSparql(query);
 
   if (!bindings || !bindings.length) {
     throw new Error(`No code artefact found for ${solutionIri}`);

@@ -18,17 +18,17 @@
   <h1>OntoGSN Playground</h1>
 
   <div class="split">
-    <div id="leftButtons" class="btns">
+    <div id="leftButtons" class="btns" data-tab-group="left-main">
       <button id = "tab-table"  class = "tab active"> Table   </button>
       <button id = "tab-editor" class = "tab"       > Editor  </button> 
       <button id = "tab-doc"    class = "tab" data-doc-query = "/assets/data/queries/read_document.sparql" data-doc-var = "doc"> Document </button>
       <button id = "tab-code"   class = "tab"> Code </button>
       <button id="tab-converter" class="tab">Converter</button>
     </div>
-    <div id="rightButtons" class="btns">
-      <button data-query="/assets/data/queries/visualize_graph.sparql" data-no-table="1"> Tree </button>
-      <button id="btn-layered-view" data-no-table="1"> Layer </button>
-      <button data-query="/assets/data/queries/read_carLoadWeight.sparql" id="btn-model-view" data-no-table="1"> Model </button>
+    <div id="rightButtons" class="btns" data-tab-group="right-main">
+      <button data-query="/assets/data/queries/visualize_graph.sparql" data-no-table="1" class = "tab active"> Tree </button>
+      <button id="btn-layered-view" data-no-table="1" class = "tab"> Layer </button>
+      <button data-query="/assets/data/queries/read_carLoadWeight.sparql" id="btn-model-view" data-no-table="1" class = "tab"> Model </button>
       <label><input id="toggle-context" type="checkbox" checked data-no-table="1"> Contextual</label>
       <label><input id="toggle-defeat" type="checkbox" checked data-no-table="1"> Dialectic</label>
       <label><input type="checkbox"
@@ -90,7 +90,7 @@
     <div id="rightButtons" class="btns">
       <span class="gsn-hint">scroll: zoom • drag: pan</span>
       Modules: 
-      <div id="modulesBar" class="modules-bar"></div>
+      <div id="modulesBar" class="modules-bar" data-tab-group="modules"></div>
     </div>
   </div>
 

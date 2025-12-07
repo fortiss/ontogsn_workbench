@@ -69,7 +69,10 @@ class PaneManager {
 
     // All tab buttons (top-left bar). We intentionally don't rely on #leftButtons,
     // because there is a second "Rules" block later.
-    const tabs = Array.from(document.querySelectorAll(".tab"));
+    const leftButtons = document.getElementById("leftButtons");
+    const tabs = leftButtons
+      ? Array.from(leftButtons.querySelectorAll(".tab"))
+      : [];
     if (!tabs.length) {
       console.warn("[PaneManager] No .tab buttons found for left panes.");
       return;
@@ -189,6 +192,28 @@ class PaneManager {
     }
   }
 }
+
+function wireTabGroups() {
+  document.querySelectorAll('[data-tab-group]').forEach(group => {
+    group.addEventListener('click', (event) => {
+      const button = event.target.closest('button.tab');
+      if (!button || !group.contains(button)) return;
+
+      // Optional: ignore disabled buttons
+      if (button.disabled) return;
+
+      // Remove .active from all tabs in THIS group…
+      group.querySelectorAll('button.tab.active')
+           .forEach(b => b.classList.remove('active'));
+
+      // …and add it to the clicked one
+      button.classList.add('active');
+    });
+  });
+}
+
+window.addEventListener('DOMContentLoaded', wireTabGroups);
+
 
 export const panes = new PaneManager();
 export default panes;

@@ -131,6 +131,10 @@ body[aria-busy="true"] [data-query] {
        cursor:pointer; 
 }
 
+.modules-bar button.tab.active {
+  text-decoration: underline;
+}
+
 [data-theme="dark"] .modules-bar button { 
        background:#222; 
        border-color:#444; 
@@ -166,7 +170,8 @@ body[aria-busy="true"] [data-query] {
 }
 
 .tab.active { 
-       background:#f2f2f2; 
+       background:#f2f2f2;
+       font-weight:600;
 }
 
 .panes { 

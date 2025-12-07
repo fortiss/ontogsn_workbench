@@ -152,6 +152,7 @@ function xmlToAsceTurtle(xmlText, options = {}) {
   });
 
   // --- Map links ----------------------------------------------------
+  // --- Map links ----------------------------------------------------
   const linkElements = Array.from(xmlDoc.querySelectorAll(linkSelector));
   linkElements.forEach((el) => {
     // Source/target: support both attribute form and ASCE child element form
@@ -184,13 +185,16 @@ function xmlToAsceTurtle(xmlText, options = {}) {
     const linkIri = `<${baseIri}link/${encodeURIComponent(linkId)}>`;
     const lines   = [];
 
-    lines.push(`${linkIri} a asce:Link`);
+    // Reified link: also mark as gsn:Relationship for convenience
+    lines.push(`${linkIri} a asce:Link, gsn:Relationship`);
     lines.push(`  ; asce:startReference ${srcIri}`);
     lines.push(`  ; asce:endReference ${tgtIri}`);
 
+    let typeNum = null;
     if (typeStr != null && typeStr !== "") {
       const n = Number(typeStr);
       if (Number.isInteger(n) && n >= 0) {
+        typeNum = n;
         lines.push(`  ; asce:type "${n}"^^xsd:nonNegativeInteger`);
       } else {
         lines.push(`  ; asce:type "${escapeLiteral(typeStr)}"`);
@@ -199,6 +203,19 @@ function xmlToAsceTurtle(xmlText, options = {}) {
 
     lines.push("  .");
     body += lines.join("\n") + "\n\n";
+
+    // --- Materialize direct GSN edges between nodes -----------------
+    // Interpretation:
+    //   source-reference   = supporting/child node
+    //   destination-reference = supported/parent node
+
+    if (typeNum === 1) {
+      // Supported-by link: parent supportedBy child
+      body += `${tgtIri} gsn:supportedBy ${srcIri} .\n\n`;
+    } else if (typeNum === 2) {
+      // Context link: parent inContextOf context
+      body += `${tgtIri} gsn:inContextOf ${srcIri} .\n\n`;
+    }
   });
 
   return header + body;

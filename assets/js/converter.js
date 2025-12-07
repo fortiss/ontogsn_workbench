@@ -1,383 +1,315 @@
-// HOW TO USE (minimal example):
-// ----------------------------------------------------------
-// <input type="file" id="xml-input" accept=".axml,.xml" />
-// <input type="file" id="asce-input" accept=".ttl" />
-// <input type="file" id="mapping-input" accept=".ttl" />
-// <input type="file" id="ontogsn-input" accept=".ttl" />
-// <button id="convert-btn">Convert to kettle.ttl</button>
+// /assets/js/converter.js
 //
-// <script src="converter.js"></script>
-// <script>
-//   setupKettleConverter({
-//     xmlInputId: "xml-input",
-//     asceTtlInputId: "asce-input",
-//     mappingTtlInputId: "mapping-input",
-//     ontogsnTtlInputId: "ontogsn-input",
-//     convertButtonId: "convert-btn"
-//   });
-// </script>
-// ----------------------------------------------------------
-//
-// NOTE: The XML → TTL mapping is *schema-dependent*.
-// I've provided a reasonable default based on a typical ASCE-like
-// structure, but you will likely want to adjust `xmlToAsceTurtle`
-// to match your actual ASCE XML schema (element/attribute names,
-// IRIs, etc.).
+// AXML → ASCE-shaped Turtle ABox converter.
+// - Reads kettle.axml / ASCE XML.
+// - Emits individuals typed as asce:Node / asce:Link, using properties
+//   consistent with asce.ttl + asce_ontogsn_mapping.ttl.
+// - Does *not* embed any ontology TBoxes; output is instance data only.
 
-(function () {
-  "use strict";
+// --- small helpers ---------------------------------------------------
 
-  // --- Utility: read File objects to string -----------------------
+function fileToText(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(reader.error);
+    reader.onload  = () => resolve(String(reader.result || ""));
+    reader.readAsText(file);
+  });
+}
 
-  function fileToText(file) {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onerror = () => reject(reader.error);
-      reader.onload = () => resolve(String(reader.result || ""));
-      reader.readAsText(file);
-    });
+function downloadText(filename, text) {
+  const blob = new Blob([text], { type: "text/turtle;charset=utf-8" });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement("a");
+  a.href     = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+// --- Turtle literal helpers -----------------------------------------
+
+function escapeLiteral(str) {
+  return String(str)
+    .replace(/(["\\])/g, "\\$1")
+    .replace(/\n/g, "\\n");
+}
+
+function escapeMultilineLiteral(str) {
+  // For """...""" literals: escape """ inside
+  return String(str).replace(/"""/g, '\\"""');
+}
+
+// --- XML → ASCE instance Turtle -------------------------------------
+
+function xmlToAsceTurtle(xmlText, options = {}) {
+  const baseIri = options.baseIri || "https://example.org/kettle#";
+
+  const parser = new DOMParser();
+  const xmlDoc = parser.parseFromString(xmlText, "application/xml");
+
+  // Quick error check
+  const parserError = xmlDoc.getElementsByTagName("parsererror")[0];
+  if (parserError) {
+    throw new Error("XML parsing error: " + parserError.textContent);
   }
 
-  // --- Utility: trigger download of a text file -------------------
+  const nodeSelector = "Node, node";
+  const linkSelector = "Link, link";
 
-  function downloadText(filename, text) {
-    const blob = new Blob([text], { type: "text/turtle;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
-  }
+  const header = [
+    "@prefix rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .",
+    "@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .",
+    "@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .",
+    "@prefix asce: <https://fortiss.github.io/OntoGSN/ontology/asce#> .",
+    "@prefix asce_m: <https://fortiss.github.io/OntoGSN/ontology/asce_mappings#> .",
+    "@prefix gsn:  <https://w3id.org/OntoGSN/ontology#> .",
+    ""
+  ].join("\n");
 
-  function xmlToAsceTurtle(xmlText, options = {}) {
-    const baseIri = options.baseIri || "https://example.org/kettle#";
+  let body = "";
 
-    const parser = new DOMParser();
-    const xmlDoc = parser.parseFromString(xmlText, "application/xml");
+  // Helper to get trimmed text of a child element if present
+  const getChildText = (el, tag) => {
+    const child = el.querySelector(tag);
+    return child ? child.textContent.trim() : null;
+  };
 
-    // Quick error check
-    const parserError = xmlDoc.getElementsByTagName("parsererror")[0];
-    if (parserError) {
-      throw new Error("XML parsing error: " + parserError.textContent);
-    }
+  // --- Map nodes ----------------------------------------------------
+  const nodeElements = Array.from(xmlDoc.querySelectorAll(nodeSelector));
+  nodeElements.forEach((el) => {
+    // Try several ways to get a stable node identifier
+    const id =
+      el.getAttribute("id") ||
+      el.getAttribute("reference") ||
+      getChildText(el, "reference");
 
-    const nodeSelector = "Node, node";
-    const linkSelector = "Link, link";
+    if (!id) return; // skip nodes we can't identify
 
-    const header = [
-      "@prefix rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .",
-      "@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .",
-      "@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .",
-      "@prefix asce: <https://fortiss.github.io/OntoGSN/ontology/asce#> .",
-      "@prefix asce_m: <https://fortiss.github.io/OntoGSN/ontology/asce_m#> .",
-      "@prefix gsn:  <https://w3id.org/OntoGSN/ontology#> .",
-      ""
-    ].join("\n");
+    const typeStr =
+      el.getAttribute("type") ||
+      getChildText(el, "type");
 
-    let body = "";
+    const userId =
+      el.getAttribute("user-id") ||
+      getChildText(el, "user-id");
 
-    // --- Map nodes ------------------------------------------------
-    const nodeElements = Array.from(xmlDoc.querySelectorAll(nodeSelector));
-    nodeElements.forEach((el) => {
-      const id = el.getAttribute("id");
-      if (!id) return;
+    const rawUserTitle =
+      el.getAttribute("user-title") ||
+      getChildText(el, "user-title");
 
-      const type = el.getAttribute("type"); // e.g. "1" = Goal, "2" = Strategy, etc. (your mapping!)
-      const statement =
+    let statement = null;
+
+    // Prefer an explicit user-title if it has content
+    if (rawUserTitle && rawUserTitle.trim() !== "") {
+      statement = rawUserTitle.trim();
+    } else {
+      const attrStatement =
         el.getAttribute("statement") ||
-        el.getAttribute("description") ||
-        el.textContent.trim();
+        el.getAttribute("description");
 
-      // Individual IRI for this node
-      const nodeIri = `<${baseIri}node/${encodeURIComponent(id)}>`;
-      const asceNodeClass = "asce:Node"; // TODO: adapt to your actual classes
-
-      const lines = [];
-
-      // Basic typing in ASCE ontology
-      lines.push(`${nodeIri} a ${asceNodeClass}`);
-
-      // Store the ASCE "type" as a data property (you probably have a better property name for this)
-      if (type != null && type !== "") {
-        lines.push(`  ; asce:nodeType "${escapeLiteral(type)}"`);
-      }
-
-      // Store the human-readable statement/description
-      if (statement) {
-        lines.push(`  ; asce:statement """${escapeMultilineLiteral(statement)}"""`);
-      }
-
-      // You can add more attribute mappings here as needed
-
-      lines.push("  .");
-      body += lines.join("\n") + "\n\n";
-    });
-
-    // --- Map links ------------------------------------------------
-    const linkElements = Array.from(xmlDoc.querySelectorAll(linkSelector));
-    linkElements.forEach((el) => {
-      const id = el.getAttribute("id");
-      const source = el.getAttribute("source");
-      const target = el.getAttribute("target");
-      const type = el.getAttribute("type"); // e.g. "1" = supportedBy, "2" = inContextOf, etc.
-
-      if (!source || !target) return;
-
-      const srcIri = `<${baseIri}node/${encodeURIComponent(source)}>`;
-      const tgtIri = `<${baseIri}node/${encodeURIComponent(target)}>`;
-      const linkIri = id
-        ? `<${baseIri}link/${encodeURIComponent(id)}>`
-        : null;
-
-      // You probably have specific link classes/properties in ASCE:
-      //    '1': (ASCE.Link,  GSN.supportedBy),
-      //    '2': (ASCE.Link,  GSN.inContextOf),
-      // etc.
-      //
-      // For now, we just encode them generically and also as data on the link.
-
-      const linkClass = "asce:Link"; // TODO: adapt
-
-      if (linkIri) {
-        const lines = [];
-        lines.push(`${linkIri} a ${linkClass}`);
-        lines.push(`  ; asce:source ${srcIri}`);
-        lines.push(`  ; asce:target ${tgtIri}`);
-        if (type != null && type !== "") {
-          lines.push(`  ; asce:linkType "${escapeLiteral(type)}"`);
-        }
-        lines.push("  .");
-        body += lines.join("\n") + "\n\n";
+      if (attrStatement && attrStatement.trim() !== "") {
+        statement = attrStatement.trim();
       } else {
-        // If no link ID, at least assert a relation directly between nodes:
-        body += `${srcIri} asce:relatedTo ${tgtIri} .\n\n`;
+        // No meaningful title → leave statement null
+        statement = null;
       }
-    });
+    }
+    
+    const nodeIri = `<${baseIri}node/${encodeURIComponent(id)}>`;
+    const lines = [];
 
-    return header + body;
-  }
+    // Class
+    lines.push(`${nodeIri} a asce:Node`);
 
-  // --- Helpers for literals in Turtle -----------------------------
-
-  function escapeLiteral(str) {
-    return String(str).replace(/(["\\])/g, "\\$1").replace(/\n/g, "\\n");
-  }
-
-  function escapeMultilineLiteral(str) {
-    // For """...""" literals: escape """ inside
-    return String(str).replace(/"""/g, '\\"""');
-  }
-
-  // --- Step 2 & 3: Build combined graph --------------------------
-  //
-  // For now we interpret "populate the graph according to X TTL schema"
-  // as: include those TTL *schemas/mappings* in the output file, next to
-  // the instance data. You can then run an OWL reasoner on kettle.ttl
-  // to materialize all OntoGSN-level statements.
-  //
-  // If you want *in-browser* materialization (apply owl:equivalentClass,
-  // rdfs:subClassOf, etc.), you can extend this script with a small
-  // OWL/RDFS rule engine later.
-
-  /**
-   * Merge:
-   *  - asce.ttl (schema)
-   *  - asce_ontogsn_mapping.ttl (mappings)
-   *  - ontogsn.ttl (OntoGSN ontology)
-   *  - instanceTtl (generated from kettle.axml)
-   *
-   * into a single Turtle document.
-   *
-   * @param {string} asceTtl
-   * @param {string} mappingTtl
-   * @param {string} ontogsnTtl
-   * @param {string} instanceTtl
-   * @param {object} options
-   * @param {boolean} [options.embedSchemas=true] - if true, include the full content of the TTL schema files
-   * @returns {string}
-   */
-  function buildCombinedKettleTurtle(
-    asceTtl,
-    mappingTtl,
-    ontogsnTtl,
-    instanceTtl,
-    options = {}
-  ) {
-    const embedSchemas =
-      options.embedSchemas === undefined ? true : !!options.embedSchemas;
-
-    // Extract all @prefix lines from the three TTL ontologies, de-duplicate them
-    const prefixLines = new Set();
-    [asceTtl, mappingTtl, ontogsnTtl].forEach((ttl) => {
-      ttl
-        .split(/\r?\n/)
-        .filter((line) => line.trim().startsWith("@prefix"))
-        .forEach((line) => prefixLines.add(line.trim()));
-    });
-
-    // Also add a few core prefixes if not already present
-    const ensurePrefix = (pfx, iri) => {
-      const pattern = new RegExp(
-        "^@prefix\\s+" + pfx.replace(/[-/\\^$*+?.()|[\]{}]/g, "\\$&") + ":"
-      );
-      const exists = Array.from(prefixLines).some((l) => pattern.test(l));
-      if (!exists) {
-        prefixLines.add(`@prefix ${pfx}: <${iri}> .`);
-      }
-    };
-
-    ensurePrefix("rdf", "http://www.w3.org/1999/02/22-rdf-syntax-ns#");
-    ensurePrefix("rdfs", "http://www.w3.org/2000/01/rdf-schema#");
-    ensurePrefix("xsd", "http://www.w3.org/2001/XMLSchema#");
-
-    const header = Array.from(prefixLines).sort().join("\n") + "\n\n";
-
-    let result = header;
-
-    if (embedSchemas) {
-      result += "# --- ASCE ontology (asce.ttl) ---\n\n";
-      result += stripPrefixLines(asceTtl) + "\n\n";
-
-      result += "# --- ASCE-OntoGSN mapping ontology (asce_ontogsn_mapping.ttl) ---\n\n";
-      result += stripPrefixLines(mappingTtl) + "\n\n";
-
-      result += "# --- OntoGSN ontology (ontogsn.ttl) ---\n\n";
-      result += stripPrefixLines(ontogsnTtl) + "\n\n";
+    // Optional: userId
+    if (userId) {
+      lines.push(`  ; asce:userId "${escapeLiteral(userId)}"`);
     }
 
-    result += "# --- Instance data converted from kettle.axml ---\n\n";
-    result += stripPrefixLines(instanceTtl) + "\n";
+    // Node type as asce:type (aligned with asce.ttl)
+    if (typeStr != null && typeStr !== "") {
+      const n = Number(typeStr);
+      if (Number.isInteger(n) && n >= 0) {
+        lines.push(`  ; asce:type "${n}"^^xsd:nonNegativeInteger`);
+      } else {
+        // fallback if the XML has non-numeric type values
+        lines.push(`  ; asce:type "${escapeLiteral(typeStr)}"`);
+      }
+    }
 
-    return result;
-  }
-
-  function stripPrefixLines(ttl) {
-    return ttl
-      .split(/\r?\n/)
-      .filter((line) => !line.trim().startsWith("@prefix"))
-      .join("\n")
-      .trim();
-  }
-
-  // --- High-level pipeline function -------------------------------
-
-  /**
-   * Full pipeline:
-   *  0. Take user-uploaded kettle.axml (ASCE XML).
-   *  1. Convert to ASCE instance Turtle (xmlToAsceTurtle).
-   *  2. Merge with asce.ttl (schema).
-   *  3. Merge with asce_ontogsn_mapping.ttl (mapping).
-   *  4. Merge with ontogsn.ttl (OntoGSN schema).
-   *  5. Allow user to download kettle.ttl.
-   *
-   * @param {object} opts
-   * @param {File}   opts.xmlFile              - kettle.axml
-   * @param {File}   opts.asceTtlFile         - asce.ttl
-   * @param {File}   opts.mappingTtlFile      - asce_ontogsn_mapping.ttl
-   * @param {File}   opts.ontogsnTtlFile      - ontogsn.ttl
-   * @param {string} [opts.baseIri]           - base IRI for instances
-   * @param {string} [opts.outputFileName]    - default "kettle.ttl"
-   * @param {boolean} [opts.embedSchemas]     - whether to embed the schema TTLs in the output
-   */
-  async function convertKettle(opts) {
-    const {
-      xmlFile,
-      asceTtlFile,
-      mappingTtlFile,
-      ontogsnTtlFile,
-      baseIri,
-      outputFileName,
-      embedSchemas
-    } = opts;
-
-    if (!xmlFile || !asceTtlFile || !mappingTtlFile || !ontogsnTtlFile) {
-      throw new Error(
-        "Missing file(s). Need xmlFile, asceTtlFile, mappingTtlFile, ontogsnTtlFile."
+    // Node label / statement as asce:userTitle (subproperty of gsn:statement)
+    if (statement) {
+      lines.push(
+        `  ; asce:userTitle """${escapeMultilineLiteral(statement)}"""`
       );
     }
 
-    // Read all files in parallel
-    const [xmlText, asceTtl, mappingTtl, ontogsnTtl] = await Promise.all([
-      fileToText(xmlFile),
-      fileToText(asceTtlFile),
-      fileToText(mappingTtlFile),
-      fileToText(ontogsnTtlFile)
-    ]);
+    lines.push("  .");
+    body += lines.join("\n") + "\n\n";
+  });
 
-    // Step 1: XML → ASCE instance TTL
-    const instanceTtl = xmlToAsceTurtle(xmlText, { baseIri });
+  // --- Map links ----------------------------------------------------
+  const linkElements = Array.from(xmlDoc.querySelectorAll(linkSelector));
+  linkElements.forEach((el) => {
+    // Source/target: support both attribute form and ASCE child element form
+    const source =
+      el.getAttribute("source") ||
+      getChildText(el, "source-reference");
 
-    // Steps 2–3: Combine ontology/mappings + instance data
-    const combinedTtl = buildCombinedKettleTurtle(
-      asceTtl,
-      mappingTtl,
-      ontogsnTtl,
-      instanceTtl,
-      { embedSchemas }
-    );
+    const target =
+      el.getAttribute("target") ||
+      getChildText(el, "destination-reference");
 
-    // Step 4: Download kettle.ttl
-    downloadText(outputFileName || "kettle.ttl", combinedTtl);
-  }
+    if (!source || !target) return;
 
-  // --- Optional: attach to a simple HTML UI -----------------------
+    const typeStr =
+      el.getAttribute("type") ||
+      getChildText(el, "type");
 
-  /**
-   * Convenience wiring for a basic HTML UI with 4 <input type="file">
-   * and one <button>.
-   *
-   * @param {object} config
-   * @param {string} config.xmlInputId
-   * @param {string} config.asceTtlInputId
-   * @param {string} config.mappingTtlInputId
-   * @param {string} config.ontogsnTtlInputId
-   * @param {string} config.convertButtonId
-   * @param {string} [config.baseIri]
-   * @param {string} [config.outputFileName]
-   * @param {boolean} [config.embedSchemas]
-   */
-  function setupKettleConverter(config) {
-    const xmlInput = document.getElementById(config.xmlInputId);
-    const asceInput = document.getElementById(config.asceTtlInputId);
-    const mappingInput = document.getElementById(config.mappingTtlInputId);
-    const ontogsnInput = document.getElementById(config.ontogsnTtlInputId);
-    const button = document.getElementById(config.convertButtonId);
+    // Link ID: use id/reference/reference child, or generate one
+    let linkId =
+      el.getAttribute("id") ||
+      el.getAttribute("reference") ||
+      getChildText(el, "reference");
 
-    if (!xmlInput || !asceInput || !mappingInput || !ontogsnInput || !button) {
-      console.warn(
-        "[converter.js] setupKettleConverter: One or more elements not found."
-      );
+    if (!linkId) {
+      linkId = `auto-${source}-${target}`;
+    }
+
+    const srcIri  = `<${baseIri}node/${encodeURIComponent(source)}>`;
+    const tgtIri  = `<${baseIri}node/${encodeURIComponent(target)}>`;
+    const linkIri = `<${baseIri}link/${encodeURIComponent(linkId)}>`;
+    const lines   = [];
+
+    lines.push(`${linkIri} a asce:Link`);
+    lines.push(`  ; asce:startReference ${srcIri}`);
+    lines.push(`  ; asce:endReference ${tgtIri}`);
+
+    if (typeStr != null && typeStr !== "") {
+      const n = Number(typeStr);
+      if (Number.isInteger(n) && n >= 0) {
+        lines.push(`  ; asce:type "${n}"^^xsd:nonNegativeInteger`);
+      } else {
+        lines.push(`  ; asce:type "${escapeLiteral(typeStr)}"`);
+      }
+    }
+
+    lines.push("  .");
+    body += lines.join("\n") + "\n\n";
+  });
+
+  return header + body;
+}
+
+// --- high-level conversion for a single XML file -------------------
+
+async function convertXmlFile(file, { baseIri } = {}) {
+  const xmlText = await fileToText(file);
+  return xmlToAsceTurtle(xmlText, { baseIri });
+}
+
+// --- Converter panel wiring ----------------------------------------
+
+let lastConvertedTtl = null;
+
+function setupConverterPanel() {
+  const root = document.getElementById("converter-root");
+  if (!root) return;
+
+  root.innerHTML = `
+    <h2>AXML → Turtle converter</h2>
+    <p>Select an ASCE <code>.axml</code> file and convert it to a Turtle ABox file (instance data only).</p>
+    <div class="converter-row">
+      <input type="file" id="kettle-axml-input" accept=".axml,.xml" />
+      <button id="kettle-convert-btn">Convert</button>
+      <button id="kettle-download-btn" disabled>Download TTL</button>
+    </div>
+    <pre id="kettle-log" class="converter-log"></pre>
+  `;
+
+  const fileInput   = root.querySelector("#kettle-axml-input");
+  const convertBtn  = root.querySelector("#kettle-convert-btn");
+  const downloadBtn = root.querySelector("#kettle-download-btn");
+  const logEl       = root.querySelector("#kettle-log");
+
+  const log = (msg) => {
+    if (logEl) logEl.textContent = msg;
+  };
+
+  convertBtn.addEventListener("click", async () => {
+    const file = fileInput?.files?.[0];
+    if (!file) {
+      log("Please select an .axml/.xml file first.");
       return;
     }
 
-    button.addEventListener("click", async () => {
-      try {
-        const xmlFile = xmlInput.files[0];
-        const asceTtlFile = asceInput.files[0];
-        const mappingTtlFile = mappingInput.files[0];
-        const ontogsnTtlFile = ontogsnInput.files[0];
+    convertBtn.disabled  = true;
+    downloadBtn.disabled = true;
+    log("Converting…");
 
-        await convertKettle({
-          xmlFile,
-          asceTtlFile,
-          mappingTtlFile,
-          ontogsnTtlFile,
-          baseIri: config.baseIri,
-          outputFileName: config.outputFileName,
-          embedSchemas:
-            config.embedSchemas === undefined ? true : !!config.embedSchemas
-        });
-      } catch (err) {
-        console.error("[converter.js] Conversion failed:", err);
-        alert("Conversion failed: " + err.message);
+    try {
+      lastConvertedTtl = await convertXmlFile(file, {
+        baseIri: "https://example.org/kettle#" // adjust if you want
+      });
+      log(
+        `Conversion succeeded. TTL size: ${lastConvertedTtl.length.toLocaleString()} characters.`
+      );
+      downloadBtn.disabled = false;
+    } catch (err) {
+      console.error("[converter] Conversion failed:", err);
+      log("Conversion failed: " + (err.message || err));
+    } finally {
+      convertBtn.disabled = false;
+    }
+  });
+
+  downloadBtn.addEventListener("click", () => {
+    if (!lastConvertedTtl) return;
+    const originalName = fileInput?.files?.[0]?.name || "kettle.axml";
+    const ttlName = originalName.replace(/\.[^.]+$/, "") + ".ttl";
+    downloadText(ttlName, lastConvertedTtl);
+  });
+}
+
+// --- Simple tab switching for 4 left panes -------------------------
+
+function setupTabs() {
+  const tabToPaneId = {
+    "tab-table":     "results",
+    "tab-editor":    "editor-root",
+    "tab-doc":       "doc-root",
+    "tab-converter": "converter-root"
+  };
+
+  const tabs = Array.from(document.querySelectorAll("button.tab"));
+  const paneIds = Object.values(tabToPaneId);
+
+  const showPaneFor = (tabId) => {
+    paneIds.forEach((pid) => {
+      const el = document.getElementById(pid);
+      if (!el) return;
+      el.style.display = (tabToPaneId[tabId] === pid ? "" : "none");
+    });
+  };
+
+  tabs.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      tabs.forEach((b) => b.classList.toggle("active", b === btn));
+      const paneId = tabToPaneId[btn.id];
+      if (paneId) {
+        showPaneFor(btn.id);
       }
     });
-  }
+  });
 
-  // Expose main functions to the global scope
-  window.convertKettle = convertKettle;
-  window.setupKettleConverter = setupKettleConverter;
-})();
+  // Initial state: table visible, others hidden
+  showPaneFor("tab-table");
+}
+
+window.addEventListener("DOMContentLoaded", () => {
+  setupTabs();           // handles Table / Editor / Document / Converter
+  setupConverterPanel(); // builds the converter UI into #converter-root
+});

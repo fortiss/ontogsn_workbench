@@ -9,6 +9,7 @@
 @prefix did:    <http://www.fortiss-demo.org/ontologies/defence-in-depth/> .
 @prefix xyz:    <http://www.example.com/placeholder#> .
 @prefix ex:     <https://example.org/car-demo#> .
+@prefix py:     <https://example.org/python-code#> .
 
 
 case:arXivPaper rdfs:label "arXiv preprint" .
@@ -462,3 +463,21 @@ ex:M_Car
                  ex:car_A3 , ex:car_Sn1 , 
                  ex:car_Sn2 , ex:car_Sn3,
                  ex:car_G2 .
+
+case:G11
+  a gsn:Goal ;
+  schema:identifier "G11" ;
+  gsn:supportedBy case:Sn11;
+  gsn:statement "Database inputs to the users table are sanitized against SQL injection." .
+
+case:Sn11
+  a gsn:Solution ;
+  schema:identifier "Sn11" ;
+  gsn:statement "Python sanitize_input(..) function uses parameterized SQL queries." ;
+  py:implementedIn py:SqlSanitizer_v1 .
+
+case:M_SQL a gsn:Module;
+           rdfs:label "M:SQL";
+           schema:identifier "M:SQL";
+           gsn:contains case:G11, case:Sn11 .
+

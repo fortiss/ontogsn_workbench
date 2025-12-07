@@ -1,5 +1,6 @@
 import app from "./queries.js";
 import { marked } from "https://cdn.jsdelivr.net/npm/marked@12.0.2/lib/marked.esm.js";
+import panes from "./panes.js";
 
 marked.setOptions({
   gfm: true,     // GitHub-style markdown (tables, etc.)
@@ -149,27 +150,11 @@ function initDocView() {
   const root = document.getElementById("doc-root");
   if (!root) return;
 
-  const tabTable   = document.getElementById("tab-table");
-  const tabEditor  = document.getElementById("tab-editor");
-  const tabDoc     = document.getElementById("tab-doc");
-  const resultsEl  = document.getElementById("results");
-  const editorRoot = document.getElementById("editor-root");
-
   root.innerHTML = `
     <div class="doc-view-placeholder">
       <p>Select a document using a button with <code>data-doc-query</code>
       to show it here.</p>
     </div>`;
-
-  function activateDocTab() {
-    if (tabDoc) tabDoc.classList.add("active");
-    tabTable?.classList.remove("active");
-    tabEditor?.classList.remove("active");
-
-    if (resultsEl)   resultsEl.style.display   = "none";
-    if (editorRoot)  editorRoot.style.display  = "none";
-    root.style.display = "";
-  }
 
   // Any element with data-doc-query will trigger loading a Markdown doc
   document.addEventListener("click", (ev) => {
@@ -185,7 +170,7 @@ function initDocView() {
 
     const varHint = el.getAttribute("data-doc-var") || "";
 
-    activateDocTab();
+    panes.activateLeftTab("tab-doc");
 
     runDocQueryInto(root, queryPath, varHint).catch(err => {
       console.error("[DocView] error loading document", err);

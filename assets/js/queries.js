@@ -1,12 +1,11 @@
-import init, { Store } from "https://cdn.jsdelivr.net/npm/oxigraph@0.5.2/web.js";
+import init, { Store }  from "https://cdn.jsdelivr.net/npm/oxigraph@0.5.2/web.js";
 import { visualizeSPO } from "./graph.js";
-import panes from "./panes.js";
+import panes            from "./panes.js";
 
 /** @typedef {{s:string,p:string,o:string}} SPORow */
 
 // ---------- DOM handles ----------
 const outEl     = document.getElementById("out");
-const resultsEl = document.getElementById("results");
 const graphEl   = panes.getRightPane();
 
 const show = x => { if (outEl) outEl.textContent = (typeof x === "string" ? x : JSON.stringify(x, null, 2)); };
@@ -14,15 +13,17 @@ const show = x => { if (outEl) outEl.textContent = (typeof x === "string" ? x : 
 // Compute repository root (two levels up from /assets/js/*.js)
 const BASE_URL  = new URL("../../", import.meta.url);
 const BASE_PATH = (BASE_URL.protocol.startsWith("http") ? BASE_URL.href : BASE_URL.pathname).replace(/\/$/, "");
-const MIME_TTL = "text/turtle";
+const MIME_TTL  = "text/turtle";
 
 // Ontology prefixes
 // --OntoGSN prefix
 const BASE_ONTO = "https://w3id.org/OntoGSN/ontology#";
 // --Assurance case prefix
 const BASE_CASE = "https://w3id.org/OntoGSN/cases/ACT-FAST-robust-llm#";
-// --Domain ontology prefix
+// --Domain ontology: Car
 const BASE_CAR  = "https://example.org/car-demo#";
+// --Domain ontology: Code
+const BASE_CODE = "https://example.org/python-code#";
 
 // Paths to data files
 const PATHS = {
@@ -30,6 +31,7 @@ const PATHS = {
   onto    : "/assets/data/ontologies/ontogsn_lite.ttl",
   example : "/assets/data/ontologies/example_ac.ttl",
   car     : "/assets/data/ontologies/car.ttl",
+  code    : "/assets/data/ontologies/example_python_code.ttl",
   // --Paths to base queries
   q       : {
     nodes     : "/assets/data/queries/read_all_nodes.sparql",
@@ -68,29 +70,19 @@ class QueryApp {
     return this._initPromise;
   }
 
-  async run(queryPath, overlayClass = null, { noTable = false } = {}) {
+  async run(queryPath, overlayClass = null, _opts = {}) {
     try {
       this._setBusy(true);
       const query = await fetchText(queryPath);
 
-      // Detect INSERT DATA and treat as SPARQL UPDATE
-      const trimmed = query.trim().toUpperCase();
       if (isUpdateQuery(query)) {
-        await this.store.update(query);  // await is nice, since run(...) is async
-
-        if (!noTable && resultsEl) {
-          resultsEl.innerHTML = "<p>SPARQL UPDATE executed.</p>";
-        }
+        await this.store.update(query);
         this._setStatus?.("SPARQL UPDATE executed.");
-        return; // don’t fall through to store.query(...)
+        return;
       }
 
       const res   = this.store.query(query);
       const rows  = bindingsToRows(res);
-
-      if (!noTable) {
-        renderTable(resultsEl, rows);
-      }
 
       const hasS = rows.length > 0 && Object.prototype.hasOwnProperty.call(rows[0], "s");
       const hasP = rows.length > 0 && Object.prototype.hasOwnProperty.call(rows[0], "p");
@@ -215,24 +207,19 @@ class QueryApp {
   }
 
   // --- private helpers ---
-  async runInline(queryText, overlayClass = null, { noTable = false } = {}) {
+  async runInline(queryText, overlayClass = null, _opts = {}) {
     try {
       this._setBusy(true);
 
       // Detect INSERT DATA and treat as SPARQL UPDATE
       if (isUpdateQuery(queryText)) {
         await this.store.update(queryText);
-        if (!noTable && resultsEl) {
-          resultsEl.innerHTML = "<p>SPARQL UPDATE executed.</p>";
-        }
         this._setStatus?.("SPARQL UPDATE executed.");
         return;
       }
 
       const res   = this.store.query(queryText);
       const rows  = bindingsToRows(res);
-
-      if (!noTable) renderTable(resultsEl, rows);
 
       const hasS = rows.length > 0 && Object.prototype.hasOwnProperty.call(rows[0], "s");
       const hasP = rows.length > 0 && Object.prototype.hasOwnProperty.call(rows[0], "p");
@@ -353,10 +340,10 @@ class QueryApp {
         continue; 
       }
 
-      const label = r.label || shorten(iri);
-      const b = document.createElement("button");
+      const label   = r.label || shorten(iri);
+      const b       = document.createElement("button");
       b.textContent = label;
-      b.title = iri;
+      b.title       = iri;
       b.addEventListener("click", async (ev) => {
         ev.preventDefault();
         ev.stopPropagation();
@@ -364,10 +351,10 @@ class QueryApp {
 
         const tmpl  = await fetchText(PATHS.q.visualizeByMod);
         let query   = tmpl;
-        query = query.replaceAll("<{{MODULE_IRI}}>", `<${iri}>`);
-        query = query.replaceAll("{{MODULE_IRI}}", `<${iri}>`);
+        query       = query.replaceAll("<{{MODULE_IRI}}>", `<${iri}>`);
+        query       = query.replaceAll("{{MODULE_IRI}}", `<${iri}>`);
         console.debug("[modules] query preview:", query.slice(0, 400));
-        await this.runInline(query, null, { noTable: false });
+        await this.runInline(query, null);
       });
       bar.appendChild(b);
     }
@@ -375,20 +362,18 @@ class QueryApp {
 
 
   _applyVisibility() {
-    const root = panes.getRightPane(); // already defined at top of queries.js
-    const ctx = document.getElementById("toggle-context");
-    const df  = document.getElementById("toggle-defeat");
+    const root  = panes.getRightPane();
+    const ctx   = document.getElementById("toggle-context");
+    const df    = document.getElementById("toggle-defeat");
     if (!root) return;
     root.classList.toggle("hide-ctx", !(ctx?.checked));
     root.classList.toggle("hide-def", !(df?.checked));
-    this.graphCtl?.fit?.(); // keep the view tidy
+    this.graphCtl?.fit?.();
   }
 
   _reapplyOverlays() {
     if (!this.graphCtl) return;
-    // one clean slate
     if (this.graphCtl.clearAll) this.graphCtl.clearAll();
-    // then reapply each active class
     for (const [cls, idSet] of this.overlays.entries()) {
       if (idSet && idSet.size > 0) {
         this.graphCtl.highlightByIds(Array.from(idSet), cls);
@@ -400,12 +385,15 @@ class QueryApp {
     const ontoURL    = `${BASE_PATH}${PATHS.onto}`;
     const exampleURL = `${BASE_PATH}${PATHS.example}`;
     const carURL     = `${BASE_PATH}${PATHS.car}`;
+    const codeURL    = `${BASE_PATH}${PATHS.code}`;
 
-    const [ttlOnto, ttlExample, ttlCar] = await Promise.all([getTTL(ontoURL), getTTL(exampleURL), getTTL(carURL),]);
+    const [ttlOnto, ttlExample, ttlCar, ttlCode] = 
+      await Promise.all([getTTL(ontoURL), getTTL(exampleURL), getTTL(carURL),getTTL(codeURL)]);
     try {
-      this.store.load(ttlOnto, MIME_TTL, BASE_ONTO);
+      this.store.load(ttlOnto,    MIME_TTL, BASE_ONTO);
       this.store.load(ttlExample, MIME_TTL, BASE_CASE);
       this.store.load(ttlCar,     MIME_TTL, BASE_CAR);
+      this.store.load(ttlCode,    MIME_TTL, BASE_CODE);
     } catch (e) {
       const preview = ttlOnto.slice(0, 300);
       show?.(`Parse error while loading TTL: ${e.message}\n\nPreview of ontogsn_lite.ttl:\n${preview}`);
@@ -439,14 +427,12 @@ class QueryApp {
   }
 
   _attachUI() {
-    // Single event delegation for all buttons tagged with [data-query]
     document.addEventListener("click", (e) => {
       const btn = e.target instanceof Element ? e.target.closest("[data-query]:not(input)") : null;
       if (!btn) return;
       const path = btn.getAttribute("data-query");
-      const noTable = btn.dataset.noTable === "1" || btn.dataset.noTable === "true";
       if (!path) return;
-      this.run(path, null, { noTable });
+      this.run(path);
     });
 
     document.addEventListener("change", (e) => {
@@ -455,7 +441,6 @@ class QueryApp {
       if (!el) return;
 
       const cls  = el.getAttribute("data-class") || "overlay";
-      const noTable = el.dataset.noTable === "1" || el.dataset.noTable === "true";
 
       const raw = el.getAttribute("data-queries") ?? el.getAttribute("data-query");
       if (!raw) return;
@@ -477,7 +462,7 @@ class QueryApp {
       if (el.checked) {
         (async () => {
           for (const path of paths) {
-            await this.run(path, cls, { noTable });
+            await this.run(path, cls);
           }
           if (isOverloadRule) {
             window.dispatchEvent(
@@ -493,7 +478,7 @@ class QueryApp {
       } else {
         (async () => {
           if (deletePath) {
-            await this.run(deletePath, cls, { noTable: true });
+            await this.run(deletePath, cls);
           }
 
           // turn off this class overlay
@@ -612,18 +597,6 @@ function bindingsToRows(iter) {
   return rows;
 }
 
-function renderTable(el, rows) {
-  if (!el) return;
-  if (!rows.length) { el.innerHTML = "<p>No results.</p>"; return; }
-  const headers = [...new Set(rows.flatMap(r => Object.keys(r)))];
-  let html = '<table class="sparql"><thead><tr>' + headers.map(h => `<th>${esc(h)}</th>`).join("") + '</tr></thead><tbody>';
-  for (const r of rows) html += '<tr>' + headers.map(h => `<td>${esc(r[h] ?? "")}</td>`).join("") + '</tr>';
-  html += '</tbody></table>';
-  el.innerHTML = html;
-}
-
-function esc(s) { return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
-
 function shorten(iriOrLabel) {
   try {
     const u = new URL(iriOrLabel);
@@ -660,8 +633,6 @@ app.selectBindings = async function selectBindings(queryText) {
   }
   return rows;
 };
-
-
 
 // Also export the app for debugging in console if needed
 export default app;

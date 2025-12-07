@@ -1,3 +1,5 @@
+// /assets/js/panes.js
+
 class PaneManager {
   constructor() {
     /** @type {HTMLElement|null} */
@@ -10,6 +12,21 @@ class PaneManager {
 
     /** @type {((ev:UIEvent)=>void)|null} */
     this._resizeHandler = null;
+
+    // --- left-side tabs/panes --------------------------------------------
+    this._leftTabsInit = false;
+    /** @type {HTMLButtonElement[]} */
+    this._leftTabs = [];
+    /** @type {HTMLElement[]} */
+    this._leftPanes = [];
+    /** @type {Record<string,string>} tab-id → pane-id */
+    this._tabToPane = {
+      "tab-table":    "results",
+      "tab-editor":   "editor-root",
+      "tab-doc":      "doc-root",
+      "tab-code":     "code-root",       // optional; ignored if not present
+      "tab-converter":"converter-root"   // optional; ignored if not present
+    };
   }
 
   // --- DOM helpers -------------------------------------------------------
@@ -38,6 +55,85 @@ class PaneManager {
       console.warn("[PaneManager] #rightPane / .gsn-host not found");
     }
     return this.rightPane;
+  }
+
+  // --- Left pane: tabs + content ----------------------------------------
+
+  /**
+   * Initialise left-side tab behaviour (Table / Editor / Document / Code / Converter).
+   * Safe to call multiple times; later calls are ignored.
+   */
+  initLeftTabs() {
+    if (this._leftTabsInit) return;
+    this._leftTabsInit = true;
+
+    // All tab buttons (top-left bar). We intentionally don't rely on #leftButtons,
+    // because there is a second "Rules" block later.
+    const tabs = Array.from(document.querySelectorAll(".tab"));
+    if (!tabs.length) {
+      console.warn("[PaneManager] No .tab buttons found for left panes.");
+      return;
+    }
+    this._leftTabs = tabs;
+
+    // Collect pane elements that actually exist in the DOM
+    const paneIds = Object.values(this._tabToPane);
+    this._leftPanes = paneIds
+      .map(id => document.getElementById(id))
+      .filter(Boolean);
+
+    const activate = (tabId) => {
+      if (!tabId) tabId = "tab-table";
+
+      // Toggle active class on tab buttons
+      this._leftTabs.forEach(btn => {
+        btn.classList.toggle("active", btn.id === tabId);
+      });
+
+      const targetPaneId = this._tabToPane[tabId];
+
+      // Show only the pane mapped from tabId; hide others
+      this._leftPanes.forEach(p => {
+        if (!p) return;
+        p.style.display = (p.id === targetPaneId ? "" : "none");
+      });
+    };
+
+    // Store activator for external callers (document.js, etc.)
+    this._activateLeftTab = activate;
+
+    // Wire click handlers for all tab buttons
+    this._leftTabs.forEach(btn => {
+      btn.addEventListener("click", () => {
+        const id = btn.id;
+        if (!this._tabToPane[id]) {
+          // Not one of the managed tabs; ignore
+          return;
+        }
+        this.activateLeftTab(id);
+      });
+    });
+
+    // Initial active tab: whichever already has .active, or fallback to Table
+    const initiallyActive =
+      tabs.find(b => b.classList.contains("active"))?.id ||
+      "tab-table";
+    if (this._tabToPane[initiallyActive]) {
+      activate(initiallyActive);
+    }
+  }
+
+  /**
+   * Public helper for other modules: activate a given left tab
+   * (and therefore hide all other left panes).
+   */
+  activateLeftTab(tabId) {
+    if (!this._leftTabsInit) {
+      this.initLeftTabs();
+    }
+    if (typeof this._activateLeftTab === "function") {
+      this._activateLeftTab(tabId);
+    }
   }
 
   // --- Right pane controller lifecycle -----------------------------------

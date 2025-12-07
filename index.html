@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title> OntoGSN Interface Test Instance </title>
   <link rel = "stylesheet" href = "/assets/css/app.css" />
-  <link rel = "stylesheet" href = "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css" />
+  <link rel = "stylesheet" href = "/assets/vendor/github.min.css" />
 </head>
 <body>
   <script>
@@ -49,10 +49,10 @@
   <div class="split">
     <div id="leftPane" class="pane pane-left">
       <div id = "results"></div>
-      <div id = "editor-root" style="display:none;"></div>
-      <div id = "doc-root" style="display:none;"></div>
-      <div id="converter-root" style="display:none;"></div>
-      <div id = "code-root" style="display:none;"></div>
+      <div id = "editor-root"    style = "display: none;"></div>
+      <div id = "doc-root"       style = "display: none;"></div>
+      <div id = "converter-root" style = "display: none;"></div>
+      <div id = "code-root"      style = "display: none;"></div>
     </div>
     <div id="rightPane" class="pane pane-right gsn-host"></div>
   </div>
@@ -95,9 +95,9 @@
   </div>
 
   <!-- Important: serve this file with a local web server (e.g., `python -m http.server`) -->
-  <script src  = "https://unpkg.com/n3@1.17.0/browser/n3.min.js"></script>
-  <script type = "importmap">{"imports": {"three": "https://unpkg.com/three@0.160.0/build/three.module.js"}}</script>
-  <script src = "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script src  = "/assets/vendor/n3.min.js"></script>
+  <script type = "importmap">{"imports": {"three": "/assets/vendor/three.module.js"}}</script>
+  <script src = "/assets/vendor/highlight.min.js"></script>
 
   <script type = "module" src = "/assets/js/queries.js" ></script>
   <script type = "module" src = "/assets/js/layers.js"  ></script>

@@ -1,5 +1,5 @@
-import * as THREE from "https://unpkg.com/three@0.160.0/build/three.module.js";
-import { OrbitControls } from "https://unpkg.com/three@0.160.0/examples/jsm/controls/OrbitControls.js";
+import * as THREE from "../vendor/three.module.js";
+import { OrbitControls } from "../vendor/OrbitControls.js";
 import app from "./queries.js";
 import panes from "./panes.js";
 

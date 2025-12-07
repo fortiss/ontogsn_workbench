@@ -1,3 +1,5 @@
+import panes from "./panes.js";
+
 function esc(str) {
   return String(str).replace(/[&<>"']/g, c => ({
     "&": "&amp;",
@@ -54,42 +56,7 @@ function renderCodePanel() {
     });
 }
 
-
-
-function wireCodeTab() {
-  const tabCode = document.getElementById("tab-code");
-  if (!tabCode) return;
-
-  const panes = {
-    "tab-table": document.getElementById("results"),
-    "tab-editor": document.getElementById("editor-root"),
-    "tab-doc": document.getElementById("doc-root"),
-    "tab-converter": document.getElementById("converter-root"),
-    "tab-code": document.getElementById("code-root")
-  };
-
-  tabCode.addEventListener("click", (ev) => {
-    ev.preventDefault();
-    ev.stopPropagation();
-    ev.stopImmediatePropagation?.();
-
-    // Toggle active class on tabs
-    const allTabs = document.querySelectorAll(".tab");
-    allTabs.forEach(btn => btn.classList.remove("active"));
-    tabCode.classList.add("active");
-
-    // Hide all left-pane sections, then show the code panel
-    Object.values(panes).forEach(el => {
-      if (!el) return;
-      el.style.display = "none";
-    });
-    if (panes["tab-code"]) {
-      panes["tab-code"].style.display = "block";
-    }
-  });
-}
-
 window.addEventListener("DOMContentLoaded", () => {
+  panes.initLeftTabs();
   renderCodePanel();
-  wireCodeTab();
 });

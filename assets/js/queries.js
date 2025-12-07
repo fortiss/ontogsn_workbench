@@ -21,8 +21,10 @@ const MIME_TTL = "text/turtle";
 const BASE_ONTO = "https://w3id.org/OntoGSN/ontology#";
 // --Assurance case prefix
 const BASE_CASE = "https://w3id.org/OntoGSN/cases/ACT-FAST-robust-llm#";
-// --Domain ontology prefix
+// --Domain ontology: Car
 const BASE_CAR  = "https://example.org/car-demo#";
+// --Domain ontology: Code
+const BASE_CODE = "https://example.org/python-code#";
 
 // Paths to data files
 const PATHS = {
@@ -30,6 +32,7 @@ const PATHS = {
   onto    : "/assets/data/ontologies/ontogsn_lite.ttl",
   example : "/assets/data/ontologies/example_ac.ttl",
   car     : "/assets/data/ontologies/car.ttl",
+  code    : "/assets/data/ontologies/example_python_code.ttl",
   // --Paths to base queries
   q       : {
     nodes     : "/assets/data/queries/read_all_nodes.sparql",
@@ -400,12 +403,14 @@ class QueryApp {
     const ontoURL    = `${BASE_PATH}${PATHS.onto}`;
     const exampleURL = `${BASE_PATH}${PATHS.example}`;
     const carURL     = `${BASE_PATH}${PATHS.car}`;
+    const codeURL    = `${BASE_PATH}${PATHS.code}`;
 
-    const [ttlOnto, ttlExample, ttlCar] = await Promise.all([getTTL(ontoURL), getTTL(exampleURL), getTTL(carURL),]);
+    const [ttlOnto, ttlExample, ttlCar, ttlCode] = await Promise.all([getTTL(ontoURL), getTTL(exampleURL), getTTL(carURL),getTTL(codeURL)]);
     try {
       this.store.load(ttlOnto, MIME_TTL, BASE_ONTO);
       this.store.load(ttlExample, MIME_TTL, BASE_CASE);
       this.store.load(ttlCar,     MIME_TTL, BASE_CAR);
+      this.store.load(ttlCode,    MIME_TTL, BASE_CODE);
     } catch (e) {
       const preview = ttlOnto.slice(0, 300);
       show?.(`Parse error while loading TTL: ${e.message}\n\nPreview of ontogsn_lite.ttl:\n${preview}`);

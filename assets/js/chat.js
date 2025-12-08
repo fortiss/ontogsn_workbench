@@ -1,19 +1,60 @@
-// /assets/js/chat.js
-import app from "./queries.js"; // re-use your Oxigraph Store
+import app from "./queries.js";
 
 // --- tiny helpers -----------------------------------------------------------
 const $ = sel => document.querySelector(sel);
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
 // Grab or persist the key/model locally
+// Grab or persist the key/model locally
 const KEY_K = "openrouter_api_key";
 const MODEL_K = "openrouter_model";
 
-const keyEl   = document.querySelector("#chat-key");
-const modelEl = document.querySelector("#chat-model");
+/**
+ * Build the chat UI inside #chat-root once.
+ */
+function buildChatUI() {
+  const root = document.getElementById("chat-root");
+  if (!root || root.dataset.initialised === "1") return;
+  root.dataset.initialised = "1";
 
-if (keyEl)   keyEl.value   = localStorage.getItem("openrouter_api_key") || "";
-if (modelEl) modelEl.value = localStorage.getItem("openrouter_model") || modelEl.value;
+  root.innerHTML = `
+    <div id="chat-panel" style="max-width:640px;width:100%;">
+      <details open>
+        <summary><strong>Chat with OntoGSN (OpenRouter)</strong></summary>
+
+        <div id="chat-log"
+             style="border:1px solid #ddd;border-radius:.5rem;
+                    padding:.5rem;height:220px;overflow:auto;margin:.5rem 0;"></div>
+
+        <form id="chat-form" style="display:grid;gap:.5rem;">
+          <input id="chat-key" type="password"
+                 placeholder="OpenRouter API key (stored locally)"
+                 autocomplete="off">
+          <input id="chat-model" type="text"
+                 value="openai/gpt-4o-mini"
+                 title="Any OpenRouter model id">
+          <textarea id="chat-input" rows="2"
+                    placeholder="Ask about goals, contexts, solutions…"></textarea>
+          <button id="chat-send" type="submit">Send</button>
+        </form>
+
+        <small>Tip: your key is kept in <code>localStorage</code> on this device only.</small>
+      </details>
+    </div>
+  `;
+
+  const keyEl   = /** @type {HTMLInputElement|null} */ (document.querySelector("#chat-key"));
+  const modelEl = /** @type {HTMLInputElement|null} */ (document.querySelector("#chat-model"));
+
+  if (keyEl)   keyEl.value   = localStorage.getItem(KEY_K)   || "";
+  if (modelEl) modelEl.value = localStorage.getItem(MODEL_K) || modelEl.value;
+
+  const formEl = document.querySelector("#chat-form");
+  if (formEl) {
+    formEl.addEventListener("submit", onChatSubmit);
+  }
+}
+
 
 
 // Make sure Oxigraph is ready
@@ -160,12 +201,19 @@ function appendMsg(role, html) {
   $("#chat-log").scrollTop = $("#chat-log").scrollHeight;
 }
 
-$("#chat-form")?.addEventListener("submit", async (ev) => {
+async function onChatSubmit(ev) {
   ev.preventDefault();
 
-  const apiKey = $("#chat-key").value.trim();
-  const model  = $("#chat-model").value.trim() || "openai/gpt-4o-mini";
-  const q      = $("#chat-input").value.trim();
+  const apiKeyEl = /** @type {HTMLInputElement|null} */ ($("#chat-key"));
+  const modelEl  = /** @type {HTMLInputElement|null} */ ($("#chat-model"));
+  const inputEl  = /** @type {HTMLTextAreaElement|null} */ ($("#chat-input"));
+  const sendBtn  = /** @type {HTMLButtonElement|null} */ ($("#chat-send"));
+
+  if (!apiKeyEl || !modelEl || !inputEl || !sendBtn) return;
+
+  const apiKey = apiKeyEl.value.trim();
+  const model  = modelEl.value.trim() || "openai/gpt-4o-mini";
+  const q      = inputEl.value.trim();
 
   if (!apiKey) { alert("Paste your OpenRouter API key first."); return; }
   if (!q) return;
@@ -175,8 +223,8 @@ $("#chat-form")?.addEventListener("submit", async (ev) => {
   localStorage.setItem(MODEL_K, model);
 
   appendMsg("user", esc(q));
-  $("#chat-input").value = "";
-  $("#chat-send").disabled = true;
+  inputEl.value = "";
+  sendBtn.disabled = true;
 
   try {
     const { synopsis, triples } = await gatherContext(q);
@@ -202,6 +250,11 @@ ${triples.slice(0, 120).map(t => `${t.s}  ${t.p}  ${t.o}`).join("\n")}`;
   } catch (e) {
     appendMsg("bot", `<em>${esc(e.message)}</em>`);
   } finally {
-    $("#chat-send").disabled = false;
+    sendBtn.disabled = false;
   }
+}
+
+// Initialise chat UI once DOM is ready
+window.addEventListener("DOMContentLoaded", () => {
+  buildChatUI();
 });

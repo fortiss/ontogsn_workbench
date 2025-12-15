@@ -1,3 +1,5 @@
+import panes from "./panes.js";
+
 // --- File handling --------------------------------------------------
 
 function fileToText(file) {
@@ -277,42 +279,7 @@ function setupConverterPanel() {
   });
 }
 
-// --- Simple tab switching for 4 left panes -------------------------
-
-function setupTabs() {
-  const tabToPaneId = {
-    "tab-table":     "results",
-    "tab-editor":    "editor-root",
-    "tab-doc":       "doc-root",
-    "tab-converter": "converter-root"
-  };
-
-  const tabs    = Array.from(document.querySelectorAll("button.tab"));
-  const paneIds = Object.values(tabToPaneId);
-
-  const showPaneFor = (tabId) => {
-    paneIds.forEach((pid) => {
-      const el = document.getElementById(pid);
-      if (!el) return;
-      el.style.display = (tabToPaneId[tabId] === pid ? "" : "none");
-    });
-  };
-
-  tabs.forEach((btn) => {
-    btn.addEventListener("click", () => {
-      tabs.forEach((b) => b.classList.toggle("active", b === btn));
-      const paneId = tabToPaneId[btn.id];
-      if (paneId) {
-        showPaneFor(btn.id);
-      }
-    });
-  });
-
-  // Initial state: table visible, others hidden
-  showPaneFor("tab-table");
-}
-
 window.addEventListener("DOMContentLoaded", () => {
-  setupTabs();           // handles Table / Editor / Document / Converter
-  setupConverterPanel(); // builds the converter UI into #converter-root
+  panes.initLeftTabs();
+  setupConverterPanel();
 });

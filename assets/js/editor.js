@@ -1,5 +1,6 @@
 // /assets/js/editor.js
 import app from "./queries.js";
+import panes from "./panes.js";
 
 // Reproduce BASE_PATH + fetchText so paths to .sparql files behave like in queries.js
 const BASE_URL  = new URL("../../", import.meta.url);
@@ -46,72 +47,6 @@ function applyTemplate(template, values) {
 }
 
 // ---- UI wiring ----
-
-function initTabs() {
-  const tabTable   = document.getElementById("tab-table");
-  const tabEditor  = document.getElementById("tab-editor");
-  const tabDoc     = document.getElementById("tab-doc");
-  const resultsEl  = document.getElementById("results");
-  const editorRoot = document.getElementById("editor-root");
-  const docRoot    = document.getElementById("doc-root");
-
-  if (!tabTable || !tabEditor || !resultsEl || !editorRoot) return;
-
-  const showTable = () => {
-    tabTable.classList.add("active");
-    tabEditor.classList.remove("active");
-    tabDoc?.classList.remove("active");
-
-    resultsEl.style.display   = "";
-    editorRoot.style.display  = "none";
-    if (docRoot) docRoot.style.display = "none";
-  };
-
-  const showEditor = () => {
-    tabEditor.classList.add("active");
-    tabTable.classList.remove("active");
-    tabDoc?.classList.remove("active");
-
-    resultsEl.style.display   = "none";
-    editorRoot.style.display  = "";
-    if (docRoot) docRoot.style.display = "none";
-  };
-
-  const showDoc = () => {
-    if (!tabDoc || !docRoot) return;
-    tabDoc.classList.add("active");
-    tabTable.classList.remove("active");
-    tabEditor.classList.remove("active");
-
-    resultsEl.style.display   = "none";
-    editorRoot.style.display  = "none";
-    docRoot.style.display     = "";
-  };
-
-  tabTable.addEventListener("click", (e) => {
-    e.preventDefault();
-    showTable();
-  });
-
-  tabEditor.addEventListener("click", (e) => {
-    e.preventDefault();
-    showEditor();
-  });
-
-  tabDoc?.addEventListener("click", (e) => {
-    e.preventDefault();
-    showDoc();
-  });
-
-  // Optional: whenever a [data-query] button is clicked (e.g. "See Node Info"),
-  // automatically switch back to the table view.
-  document.addEventListener("click", (e) => {
-    const btn = e.target instanceof Element
-      ? e.target.closest("[data-query]")
-      : null;
-    if (btn) showTable();
-  });
-}
 
 async function initEditorUI() {
   const root = document.getElementById("editor-root");
@@ -259,6 +194,6 @@ async function initEditorUI() {
 
 // Boot
 window.addEventListener("DOMContentLoaded", () => {
-  initTabs();
+  panes.initLeftTabs();
   initEditorUI();
 });

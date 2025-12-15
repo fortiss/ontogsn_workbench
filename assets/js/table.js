@@ -139,7 +139,7 @@ function initTableView() {
   const contentEl = root.querySelector("#table-content");
   if (!contentEl) return;
 
-  panes.activateLeftTab?.("tab-table");
+  //panes.activateLeftTab?.("tab-table");
 
   runTableQueryInto(contentEl, DEFAULT_TABLE_QUERY).catch(err => {
     console.error("[TableView] error running default table query", err);

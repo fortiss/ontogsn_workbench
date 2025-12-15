@@ -19,7 +19,8 @@
 
   <div class="split">
     <div id="leftButtons" class="btns" data-tab-group="left-main">
-      <button id = "tab-table"  class = "tab active"> Table   </button>
+      <button id = "tab-welcome"  class = "tab active" data-doc-query = "/assets/data/queries/read_welcomeDoc.sparql" data-doc-var = "doc"> Welcome   </button>
+      <button id = "tab-table"  class = "tab"> Table   </button>
       <button id = "tab-editor" class = "tab"       > Editor  </button> 
       <button id = "tab-doc"    class = "tab" data-doc-query = "/assets/data/queries/read_document.sparql" data-doc-var = "doc"> Document </button>
       <button id = "tab-code"   class = "tab"> Code </button>
@@ -50,6 +51,8 @@
   <div class="split">
     <div id="leftPane" class="pane pane-left">
       <div id = "results"></div>
+      <!-- -->
+      <div id = "welcome-root"   style = "display: none;"></div> 
       <div id = "editor-root"    style = "display: none;"></div>
       <div id = "doc-root"       style = "display: none;"></div>
       <div id = "converter-root" style = "display: none;"></div>
@@ -101,6 +104,7 @@
   <script type = "importmap">{"imports": {"three": "/assets/vendor/three.module.js"}}</script>
   <script src = "/assets/vendor/highlight.min.js"></script>
 
+  <script type = "module" src = "/assets/js/welcome.js" ></script>
   <script type = "module" src = "/assets/js/queries.js" ></script>
   <script type = "module" src = "/assets/js/layers.js"  ></script>
   <script type = "module" src = "/assets/js/model.js"   ></script>

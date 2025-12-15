@@ -21,6 +21,7 @@ class PaneManager {
     this._leftPanes = [];
     /** @type {Record<string,string>} tab-id → pane-id */
     this._tabToPane = {
+      "tab-welcome":    "welcome-root",
       "tab-table":      "results",
       "tab-editor":     "editor-root",
       "tab-doc":        "doc-root",

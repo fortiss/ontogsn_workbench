@@ -15,6 +15,9 @@
 case:arXivPaper rdfs:label "arXiv preprint" .
 owl:Ontology rdfs:label "Ontology" .
 
+case:OntoGSNPlayground a xyz:WebApp;
+                        schema:contentUrl "http://localhost:8000/assets/data/welcome.md" .
+
 case:AC_ACT_FASTRobustLLM
     a gsn:AssuranceCase ;
     schema:identifier "AC-2025-ACT-FAST-RobustLLM" ;

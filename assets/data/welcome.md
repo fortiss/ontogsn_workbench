@@ -1,10 +1,25 @@
 # Welcome to the OntoGSN Playground!
 
-This interactive playground is designed to give you, an assurance or safety engineer, a hands-on feel for what a "living" assurance case looks like. Unlike static documents, this assurance case is a dynamic model where all the pieces—goals, evidence, context, and even 3D models—are interconnected.
+This interactive and experimental playground is designed to give you a hands-on feel for what a **semantic assurance case** looks like. Unlike static documents, this assurance case is a dynamic, living model where all the pieces—goals, evidence, context, and even 3D models—are interconnected in ontologies. The core users are assurance engineers working in safety or security.
 
 ## What Can You Do Here?
 
-Your goal is to explore! Click around, toggle the switches, and see how the assurance argument reacts. Nothing you do here can break anything permanently.
+Explore! Click around, toggle the switches, and see how the assurance argument reacts. Nothing you do here can break anything permanently.
+
+```
++-------------------------------------------------+
+|                Buttons (Top)                    |
++----------------------+--------------------------+
+| Textual (Left)       | Visualization (Right)    |
+|                      |                          |
+|                      |                          |
+|                      |                          |
++----------------------+--------------------------+
+|               Options (Bottom)                  |
++-------------------------------------------------+
+```
+
+In the future, we will be adding different experimental editors. Stay tuned!
 
 ---
 
@@ -36,7 +51,7 @@ Above the graph, you'll find several toggles to filter the view:
 
 ---
 
-### The "Living" Assurance Case: Try This!
+### The Semantic Assurance Case: Try This!
 
 The real power of this model is its ability to automatically re-evaluate the argument when things change. Let's try an example:
 
@@ -49,8 +64,6 @@ You will see that the system has automatically:
 *   Calculated that the car's roof is now overloaded.
 *   Added a new "defeater" node (in red) to challenge the argument.
 *   Propagated this failure up the argument, marking the affected goals as `invalid`.
-
-This is something a static document could never do!
 
 ---
 
